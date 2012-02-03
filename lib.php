@@ -474,7 +474,11 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
            return  turnitin_update_assignment($plagiarismsettings, $plagiarismvalues, $eventdata, 'delete');
         } else if ($eventdata->eventtype=="file_uploaded") {
             // check if the module associated with this event still exists
-            if (!$DB->record_exists('course_modules', array('id' => $eventdata->cmid))) {
+            $cm = $DB->get_record('course_modules', array('id' => $eventdata->cmid));
+
+            $modulename = $DB->get_field('modules', 'name', array('id' => $cm->module));
+
+            if (!$cm) {
                 return true;
             }
 
@@ -500,7 +504,11 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
                     $result = true;
                     if ($files = $fs->get_area_files($modulecontext->id, 'mod_assignment', 'submission', $submission->id, "timemodified", false)) {
                         foreach ($files as $file) {
-                            $fileresult = false;
+                            //$fileresult = false;
+                            $fileresult = true; // may have been already sent
+                            if ($file->get_filename() == '.') {
+                                continue; // move long - nothing to see here.
+                            }
                             //TODO: need to check if this file has already been sent! - possible that the file was sent before draft submit was set.
                             $pid = plagiarism_update_record($cmid, $eventdata->userid, $file->get_pathnamehash());
                             if (!empty($pid)) {
@@ -522,27 +530,25 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
 
             // Normal scenario - this is an upload event with one or more attached files
             // Attached file(s) are to be immediately submitted to TII
+            $fs = get_file_storage();
+            require_once("$CFG->dirroot/mod/assignment/lib.php");
+            $assignmentbase = new assignment_base($cmid);
+            $submission = $assignmentbase->get_submission($eventdata->userid);
+            $modulecontext = get_context_instance(CONTEXT_MODULE, $eventdata->cmid);
+            $files = $fs->get_area_files($modulecontext->id, 'mod_assignment', 'submission', $submission->id, "timemodified", false);
             $result = true;
-            foreach ($eventdata->files as $efile) {
-                $fileresult = false;
-                if ($efile->get_filename() ==='.') {
-                    // This is a directory - nothing to do.
-                    continue;
+            if ($files) {
+                foreach ($files as $file) {
+                    $fileresult = true; // may have been already sent
+                    if ($file->get_filename() == '.') {
+                        continue; // move long - nothing to see here.
+                    }
+                    $pid = plagiarism_update_record($cmid, $eventdata->userid, $file->get_pathnamehash());
+                    if (!empty($pid)) {
+                        $fileresult = turnitin_send_file($pid, $plagiarismsettings, $file);
+                    }
+                    $result = $fileresult && $result;
                 }
-                //hacky way to check file still exists
-                $fs = get_file_storage();
-                $fileid = $fs->get_file_by_hash($efile->get_pathnamehash());
-                if (empty($fileid)) {
-                    mtrace("nofilefound!");
-                    continue;
-                }
-
-                //TODO - check if this particular file has already been submitted.
-                $pid = plagiarism_update_record($cmid, $eventdata->userid, $efile->get_pathnamehash());
-                if (!empty($pid)) {
-                    $fileresult = turnitin_send_file($pid, $plagiarismsettings, $efile);
-                }
-                $result = $result && $fileresult;
             }
             return $result;
         } else if ($eventdata->eventtype=="quizattempt") {
