@@ -928,7 +928,9 @@ function turnitin_send_file($pid, $plagiarismsettings, $file) {
         //$tii2['diagnostic'] = '1';
         $tiixml = plagiarism_get_xml(turnitin_get_url($tii, $plagiarismsettings, false, $pid));
         if (empty($tiixml->rcode[0]) or $tiixml->rcode[0] <> TURNITIN_RESP_USER_JOINED) { //this is the success code for uploading a file. - we need to return the oid and save it!
-            mtrace('could not enrol user in turnitin class code:'.$tiixml->rcode[0]);
+            //mtrace('could not enrol user in turnitin class code:'.$tiixml->rcode[0]);
+            $message = $tiixml->rcode[0] . ' could not enrol user '.$tii['username'].' in turnitin class code '.$tii['ctl'];
+            mtrace($message);
         } else {
             $plagiarism_file = $DB->get_record('turnitin_files', array('id'=>$pid)); //make sure we get latest record as it may have changed
             $plagiarism_file->statuscode = (string)$tiixml->rcode[0];
@@ -1117,7 +1119,7 @@ function turnitin_update_assignment($plagiarismsettings, $plagiarismvalues, $eve
         if (get_config('plagiarism_turnitin_course', $course->id)) {
             //course already exists - don't bother to create it.
             $tii['cid']      = get_config('plagiarism_turnitin_course', $course->id); //course ID
-            //mtrace('courseexists - don\'t create');
+            mtrace($course->shortname. " exists on turnitin - don't create");
         } else {
             //TODO: use some random unique id for cid
             $tii['cid']      = "c_".time().rand(10,5000); //some unique random id only used once.
@@ -1231,14 +1233,14 @@ function turnitin_update_assignment($plagiarismsettings, $plagiarismvalues, $eve
                 $tiixml = turnitin_post_data($tii, $plagiarismsettings);
             }
             if ($tiixml->rcode[0]==TURNITIN_RESP_ASSIGN_MODIFIED) {
-                mtrace("Turnitin Success creating Class and assignment");
+                mtrace("Turnitin Success creating Class ".$course->shortname." and assignment: ".$tii['assign']);
             } else {
-                mtrace("Error: could not create assignment in class statuscode:".$tiixml->rcode[0].' '.$tiixml->rmessage, 3);
+                mtrace("Error: could not create assignment ".$tii['assign']." in class ".$course->shortname." statuscode:".$tiixml->rcode[0].' '.$tiixml->rmessage);
                 $return = false;
             }
 
         } else {
-            mtrace("Error: could not create class and assign global instructor statuscode:".$tiixml->rcode[0]);
+            mtrace("Error: could not create class ".$course->shortname. " and assign global instructor: ".$user->id." ".$user->email." statuscode:".$tiixml->rcode[0]);
             $return = false;
         }
     }
