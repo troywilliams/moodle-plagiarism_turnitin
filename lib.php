@@ -1184,7 +1184,7 @@ function turnitin_update_assignment($plagiarismsettings, $plagiarismvalues, $eve
             $tii['exclude_quoted']    = (isset($plagiarismvalues['plagiarism_exclude_quoted']) ? $plagiarismvalues['plagiarism_exclude_quoted'] : '0');
             $tii['exclude_type']      = (isset($plagiarismvalues['plagiarism_exclude_matches']) ? $plagiarismvalues['plagiarism_exclude_matches'] : '0');
             $tii['exclude_value']     = (isset($plagiarismvalues['plagiarism_exclude_matches_value']) ? $plagiarismvalues['plagiarism_exclude_matches_value'] : '');
-            $tii['ainst']             = (!empty($module->intro) ? $module->intro : '');
+            $tii['ainst']             = (!empty($module->intro) ? ((strlen($module->intro) < 1000) ? $module->intro : '') : '');
             $tii['max_points']        = (!empty($module->grade) && $module->grade > 0 ? ceil($module->grade) : '0');
             if (isset($plagiarismvalues['plagiarism_anonymity'])) {
                 $tii['anon'] = $plagiarismvalues['plagiarism_anonymity'] ? 1 : 0;
