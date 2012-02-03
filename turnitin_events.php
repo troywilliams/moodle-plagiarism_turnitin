@@ -35,7 +35,7 @@ if ($clear == 1 and $id) {
     $continueurl = new moodle_url('turnitin_events.php', array('id'=>$id, 'clear'=>1, 'confirm'=>1));
     if (!empty($confirm) and confirm_sesskey()) { 
         $qhandler = $DB->get_record('events_queue_handlers', array('id'=>$id), '*', MUST_EXIST);
-        $DB->delete_records('events_queue', array('id'=>$qhandler->queuedeventid));
+        //$DB->delete_records('events_queue', array('id'=>$qhandler->queuedeventid));
         $DB->delete_records('events_queue_handlers', array('id'=>$id));
         redirect($returnurl, get_string('eventdeleted','plagiarism_turnitin'));
     }
@@ -54,6 +54,11 @@ $currenttab='turnitinevents';
 require_once('turnitin_tabs.php');
 require_once($CFG->dirroot.'/plagiarism/turnitin/db/events.php');
 
+$tiihanderfunctions = array();
+foreach ($handlers as $handler) {
+    $tiihanderfunctions[] = $handler['handlerfunction'];
+}
+
 $tiieventnames = array_keys($handlers);
 list($insql, $inparams) = $DB->get_in_or_equal($tiieventnames, SQL_PARAMS_NAMED, 'eventname');
 
@@ -63,13 +68,15 @@ FROM {events_queue_handlers} qh, {events_handlers} h, {events_queue} q
 WHERE qh.handlerid = h.id 
 AND qh.queuedeventid = q.id 
 AND h.eventname $insql
+AND h.component = 'plagiarism_turnitin' 
 ORDER BY q.timecreated";
 
 $tiisqlcount =  "SELECT COUNT(*) 
 FROM {events_queue_handlers} qh, {events_handlers} h, {events_queue} q 
 WHERE qh.handlerid = h.id 
 AND qh.queuedeventid = q.id 
-AND h.eventname $insql";
+AND h.eventname $insql 
+AND h.component = 'plagiarism_turnitin'";
 
 $count = $DB->count_records_sql($tiisqlcount, $inparams);
 $tiievents = $DB->get_records_sql($tiisql, $inparams, $page*$limit, $limit);
