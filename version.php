@@ -15,8 +15,8 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 $plugin->version =  2011121400;
-$plugin->requires = 2011120501.06;
+$plugin->requires = 2011033000;
 $plugin->cron     = 300;
 $plugin->component = 'plagiarism_turnitin';
 $plugin->maturity  = MATURITY_STABLE;
-$plugin->release   = '2.2';
+$plugin->release   = '2.0';
