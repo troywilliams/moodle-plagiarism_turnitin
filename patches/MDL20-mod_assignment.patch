@@ -1,0 +1,51 @@
+diff --git a/mod/assignment/lib.php b/mod/assignment/lib.php
+index b98583d..85372f1 100644
+--- a/mod/assignment/lib.php
++++ b/mod/assignment/lib.php
+@@ -207,7 +207,7 @@ class assignment_base {
+         echo $OUTPUT->box_start('generalbox boxaligncenter', 'intro');
+         echo format_module_intro('assignment', $this->assignment, $this->cm->id);
+         echo $OUTPUT->box_end();
+-        plagiarism_print_disclosure($this->cm->id);
++        echo plagiarism_print_disclosure($this->cm->id);
+     }
+ 
+     /**
+@@ -1161,7 +1161,7 @@ class assignment_base {
+         echo '<div class="usersubmissions">';
+ 
+         //hook to allow plagiarism plugins to update status/print links.
+-        plagiarism_update_status($this->course, $this->cm);
++        echo plagiarism_update_status($this->course, $this->cm);
+ 
+         $course_context = get_context_instance(CONTEXT_COURSE, $course->id);
+         if (has_capability('gradereport/grader:view', $course_context) && has_capability('moodle/grade:viewall', $course_context)) {
+diff --git a/mod/assignment/type/upload/assignment.class.php b/mod/assignment/type/upload/assignment.class.php
+index 54a20c7..c128e52 100644
+--- a/mod/assignment/type/upload/assignment.class.php
++++ b/mod/assignment/type/upload/assignment.class.php
+@@ -561,8 +561,9 @@ class assignment_upload extends assignment_base {
+             $eventdata->courseid     = $this->course->id;
+             $eventdata->userid       = $USER->id;
+             if ($files) {
+-                $eventdata->files        = $files;
++                $eventdata->files    = $files; // This is depreciated - please use pathnamehashes instead!
+             }
++            $eventdata->pathnamehashes = array_keys($files);
+             events_trigger('assessable_file_uploaded', $eventdata);
+             $returnurl  = new moodle_url('/mod/assignment/view.php', array('id'=>$this->cm->id));
+             redirect($returnurl);
+diff --git a/mod/assignment/type/uploadsingle/assignment.class.php b/mod/assignment/type/uploadsingle/assignment.class.php
+index 03f91af..6fd7277 100644
+--- a/mod/assignment/type/uploadsingle/assignment.class.php
++++ b/mod/assignment/type/uploadsingle/assignment.class.php
+@@ -212,7 +212,8 @@ class assignment_uploadsingle extends assignment_base {
+                     $eventdata->itemid       = $submission->id;
+                     $eventdata->courseid     = $this->course->id;
+                     $eventdata->userid       = $USER->id;
+-                    $eventdata->file         = $file;
++                    $eventdata->file         = $file; // This is depreciated - please use pathnamehashes instead!
++                    $eventdata->pathnamehashes = array($file->get_pathnamehash());
+                     events_trigger('assessable_file_uploaded', $eventdata);
+                 }
+ 
