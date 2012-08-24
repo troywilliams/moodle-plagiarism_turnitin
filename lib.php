@@ -1379,14 +1379,14 @@ function turnitin_update_assignment($plagiarismsettings, $plagiarismvalues, $eve
             $tii['assign'] = $plagiarismvalues['turnitin_assign'];
         }
         $turnitindateformat = 'Y-m-d H:i:s';
-        if (!empty($module->timeavailable) && ($module->timeavailable > strtotime('+10 minutes'))) {
+        if (!empty($module->timeavailable)) {
             $dtstart = $module->timeavailable;
             $tii['dtstart'] = rawurlencode(date($turnitindateformat, $dtstart));
         } else {
             $dtstart = strtotime('+10 minutes');
             $tii['dtstart'] = rawurlencode(date($turnitindateformat, $dtstart));
         }
-        if (!empty($module->timedue) && ($module->timedue > strtotime('+10 minutes'))) {
+        if (!empty($module->timedue)) {
             $dtdue = $module->timedue;
             $tii['dtdue'] = rawurlencode(date($turnitindateformat, $dtdue));
         } else {
