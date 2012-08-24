@@ -1379,18 +1379,25 @@ function turnitin_update_assignment($plagiarismsettings, $plagiarismvalues, $eve
             $tii['assign'] = $plagiarismvalues['turnitin_assign'];
         }
         $turnitindateformat = 'Y-m-d H:i:s';
-        if (!empty($module->timeavailable)) {
-            $dtstart = $module->timeavailable;
-            $tii['dtstart'] = rawurlencode(date($turnitindateformat, $dtstart));
-        } else {
-            $dtstart = strtotime('+10 minutes');
-            $tii['dtstart'] = rawurlencode(date($turnitindateformat, $dtstart));
+        $dtstart = isset($module->timeavailable) ? $module->timeavailable : 0;
+        $dtdue = isset($module->timedue) ? $module->timedue : 0;
+        if (empty($dtstart) && empty($dtdue)) { // both set to 0
+            $tii['dtstart'] = rawurlencode(date($turnitindateformat, strtotime('+10 minutes')));
+            $tii['dtdue'] = rawurlencode(date($turnitindateformat, strtotime('+1 year')));
         }
-        if (!empty($module->timedue)) {
-            $dtdue = $module->timedue;
+        if (empty($dtstart) && !empty($dtdue)) { // timeavailable 0, timedue set
             $tii['dtdue'] = rawurlencode(date($turnitindateformat, $dtdue));
-        } else {
-            $dtdue = strtotime('+1 year');
+            $tii['dtstart'] = rawurlencode(date($turnitindateformat, strtotime('-1 year', $dtdue)));
+        }
+        if (!empty($dtstart) && empty($dtdue)) { // timeavailable set, timedue 0
+            $tii['dtstart'] = rawurlencode(date($turnitindateformat, $dtstart));
+            $tii['dtdue'] = rawurlencode(date($turnitindateformat, strtotime('+1 year', $dtstart)));
+        }
+        if (!empty($dtstart) && !empty($dtdue)) { // timeavailable set, timedue set
+            $tii['dtstart'] = rawurlencode(date($turnitindateformat, $dtstart));
+            if ($dtstart > $dtdue) {
+                $tii['dtstart'] = rawurlencode(date($turnitindateformat, strtotime('-1 year', $dtdue)));
+            }
             $tii['dtdue'] = rawurlencode(date($turnitindateformat, $dtdue));
         }
         if (!empty($module->preventlate)) {
