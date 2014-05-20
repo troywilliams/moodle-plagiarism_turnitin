@@ -704,6 +704,7 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
             if (isset($plagiarismvalues['plagiarism_draft_submit'])
                     && $plagiarismvalues['plagiarism_draft_submit'] == PLAGIARISM_TII_DRAFTSUBMIT_FINAL) {
                 // Files shouldn't be submitted to TII until 'finalize' file upload event.
+                mtrace("Files shouldn't be submitted to TII until 'finalize' file upload event.");
                 return true;
             }
 
@@ -745,6 +746,36 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
                 	}
                 	$result = $result && $fileresult;
              	}
+            }
+            // Turnitin turned on after file submissions. assessable_submitted event with no pathnamehashes
+            // we need to do some work here to get every thing we need.
+            if ($eventdata->eventtype == 'assessable_submitted' && $eventdata->modulename == 'assign') {
+                $cmid = $eventdata->cmid;
+                $userid = $eventdata->userid;
+                $context = context_module::instance($cmid);
+                $cm = get_coursemodule_from_id('assign', $cmid, 0, false, MUST_EXIST);
+                $course = $DB->get_record('course', array('id' => $cm->course), '*', MUST_EXIST);
+                $assign = new assign($context, $cm, $course);
+                $fileassignsubmission = $assign->get_plugin_by_type('assignsubmission', 'file'); // Only after file submissions.
+                if ($fileassignsubmission) {
+                    $submission = $assign->get_user_submission($userid, false);
+                    $user = $DB->get_record('user', array('id' => $userid), '*', MUST_EXIST);
+                    $files = $fileassignsubmission->get_files($submission, $user); // Does not include directories.
+                    if ($files) {
+                        mtrace("Have files to send to Turnitin");
+                        foreach ($files as $file) {
+                            /* @var stored_file $file */
+                            $pid = plagiarism_update_record($cmid, $userid, $file->get_pathnamehash());
+                            if (!empty($pid)) {
+                                $fileresult = turnitin_send_file($pid, $plagiarismsettings, $file);
+                            } else {
+                                mtrace("File in a stated that can't be sent");
+                                $fileresult = true; // Already sent.
+                            }
+                            $result = $fileresult && $result;
+                        }
+                    }
+                }
             }
             return $result;
         } else if ($eventdata->eventtype=="quizattempt") {
