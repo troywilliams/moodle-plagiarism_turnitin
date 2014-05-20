@@ -748,7 +748,7 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
              	}
             }
             // Turnitin turned on after file submissions. assessable_submitted event with no pathnamehashes
-            // we need to do some work here to get every thing we need.
+            // we need to do some work here to get every thing we need. Does not handle online text at this stage. TODO
             if ($eventdata->eventtype == 'assessable_submitted' && $eventdata->modulename == 'assign') {
                 $cmid = $eventdata->cmid;
                 $userid = $eventdata->userid;
@@ -1159,7 +1159,8 @@ function turnitin_send_file($pid, $plagiarismsettings, $file) {
     // files that are just over the limit return a 1007 error.
     // We set this to be slightly higher than what Turnitin usually accepts and allow turnitin api to return a failure for files
     // slightly over the limit.
-    if ($file->get_filesize() > 22020096) { // 21MB - (turnitin correctly error for files slightly over 20MB but massive failure for larger files.
+    $filesize = (!empty($file->filepath)) ? filesize($file->filepath) : $file->get_filename();
+    if ($filesize > 22020096) { // 21MB - (turnitin correctly error for files slightly over 20MB but massive failure for larger files.
         $plagiarism_file->statuscode = TURNITIN_RESP_TOOBIG;
         if (! $DB->update_record('plagiarism_turnitin_files', $plagiarism_file)) {
             debugging("Error updating turnitin_files record");
