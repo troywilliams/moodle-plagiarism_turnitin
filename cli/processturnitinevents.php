@@ -18,26 +18,33 @@ raise_memory_limit(MEMORY_EXTRA);
 /// Start output log
 $timenow  = time();
 
-mtrace("Server Time: ".date('r',$timenow));
+$trace = new progress_trace_buffer(new text_progress_trace(), true); // output and buffer
+
+$trace->output("Server Time: ".date('r',$timenow));
 
 $processed = plagiarism_turnitin_process_events_cron('mod_created');
-mtrace('mod_created, processed: '.$processed);
+$trace->output('mod_created, processed:'.$processed);
 
 $processed = plagiarism_turnitin_process_events_cron('mod_updated');
-mtrace('mod_updated, processed: '.$processed);
+$trace->output('mod_updated, processed:'.$processed);
 
 $processed = plagiarism_turnitin_process_events_cron('mod_deleted');
-mtrace('mod_deleted, processed: '.$processed);
+$trace->output('mod_deleted, processed:'.$processed);
 
 $processed = plagiarism_turnitin_process_events_cron('assessable_file_uploaded');
-mtrace('assessable_file_uploaded, processed: '.$processed);
+$trace->output('assessable_file_uploaded, processed:'.$processed);
 
 $processed = plagiarism_turnitin_process_events_cron('assessable_files_done');
-mtrace('assessable_files_done, processed: '.$processed);
+$trace->output('assessable_files_done, processed:'.$processed);
 
 $difftime = microtime_diff($starttime, microtime());
+$trace->output("Execution took ".$difftime." seconds");
 
-mtrace("Execution took ".$difftime." seconds");
+$trace->finished();
+
+$messagetext = $trace->get_buffer();
+
+email_to_user(get_admin(), get_admin(), 'Turnitin cron notification', $messagetext);
 
 function plagiarism_turnitin_process_events_cron($eventname) {
     global $DB;
